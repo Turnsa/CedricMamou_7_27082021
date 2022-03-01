@@ -4,10 +4,10 @@ const models = require('../models');
 const fs = require('fs');
 // const asyncLib = require('async');
 
-
 // regex
 const EMAIL_REGEX = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PASSWORD_REGEX = /^(?=.*\d).{4,8}$/;
+
 
 // connexion avec un compte existant
 exports.login = (req, res, next) => {
@@ -34,11 +34,10 @@ exports.login = (req, res, next) => {
             userId: user.id,
             token: jwtUtils.generateToken(user)
           });
-        })
-        .catch(error => res.status(500).json({ error }));
-    })
-    .catch(error => res.status(500).json({ error }));
+        }).catch(error => res.status(500).json({ error }));
+    }).catch(error => res.status(500).json({ error }));
 };
+
 
 // creation d'un compte
 exports.signup = (req, res, next) => {
@@ -46,6 +45,8 @@ exports.signup = (req, res, next) => {
   const prenom = req.body.prenom;
   const email = req.body.email;
   const password = req.body.password;
+  const bio = req.body.bio;
+  const photo = `${req.protocol}://${req.get('host')}/images/profile/anonyme.png`;
 
 
   if (nom == null || prenom == null || email == null || password == null) {
@@ -71,137 +72,142 @@ exports.signup = (req, res, next) => {
   models.User.findOne({
     attributes: ['email'],
     where: { email: email }
-  })
-    .then(user => {
-      if (!user) {
-        bcrypt.hash(password, 10, function (err, bcryptPassword) {
-          // Création de l'user
-          const newUser = models.User.create({
-            nom: nom,
-            prenom: prenom,
-            email: email,
-            password: bcryptPassword,
-            isAdmin: 0
-          })
-            .then(newUser => { res.status(201).json({ 'id': newUser.id, message: 'user create' });
-          })
-            .catch(err => {
-              res.status(500).json({ err });
-            })
+  }).then(user => {
+    if (!user) {
+      bcrypt.hash(password, 10, function (err, bcryptPassword) {
+        // Création de l'user
+        const newUser = models.User.create({
+          nom: nom,
+          prenom: prenom,
+          email: email,
+          password: bcryptPassword,
+          bio: bio,
+          photo_profil: photo,
+          isAdmin: 0
+        }).then(newUser => {
+          res.status(201).json({ 'id': newUser.id, message: 'user create' });
+        }).catch(err => {
+          res.status(500).json({ err });
         })
-      } else {
-        res.status(409).json({ 'error': 'email already used' });
-      }
-    })
-    .catch(error => {
-      return res.status(500).json({ 'error': 'unable to verify user' });
-    });
+      })
+    } else {
+      res.status(409).json({ 'error': 'email already used' });
+    }
+  }).catch(error => {
+    return res.status(500).json({ error: 'unable to verify user' });
+  });
 };
 
 // récupérer un profil
-exports.getUserProfile = (req, res, next) => {
-  const id = req.params.id;
+exports.getOneUser = (req, res, next) => {
+  let headerAuth = req.headers['authorization'];
+  let userId = jwtUtils.getUserId(headerAuth);
 
-  models.User.findByPk(id)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({
-          message: "user not found",
-        });
-      }
-      res.status(200).json({ 
-        id: user.id,
-        nom: user.nom,
-        prenom: user.prenom,
-        email: user.email,
-        bio: user.bio,
-        photo_profile: user.photo_profile,
-        admin: user.isAdmin,
+  if (userId < 0)
+    return res.status(400).json({ 'error': 'wrong token' });
+
+  models.User.findOne({
+    attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'photo_profil'],
+    where: { id: userId }
+  }).then(function (user) {
+    if (user) {
+      res.status(201).json(user);
+    } else {
+      res.status(404).json({ 'error': 'user not found' });
+    }
+  }).catch(function (err) {
+    res.status(500).json({ 'error': 'cannot fetch user' });
+  });
+},
+
+
+  // récupérer tout les profils
+  exports.getAllUsers = async (req, res, next) => {
+    try {
+      const user = await models.User.findAll({
+        attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'photo_profil', 'isAdmin']
+
       });
-    })
-    .catch((err) => res.status(500).json({ err }));
-};
+      res.status(200).json(user);
+    } catch (error) {
+      return res.status(500).send({ error: "Erreur serveur" });
+    }
+  };
+
 
 // modification de profil
-exports.updateProfile = (req, res, next) => {
-  const userId = req.params.id;
+exports.updateUser = (req, res, next) => {
+  let headerAuth = req.headers['authorization'];
+  let user_id = jwtUtils.getUserId(headerAuth);
+  let userId = req.params.id;
+  // const filename = user.photo.split("/images/profile")[1];
 
   const nom = req.body.nom;
   const prenom = req.body.prenom;
-  const email = req.body.email;
   const bio = req.body.bio;
 
-  models.User.findOne({
-    attributes: ['id', 'nom', 'prenom', 'email', 'bio'],
-    where: { id: userId }
-  })
-  .then((userFound) => {
-      if (userFound != null) {
-        userFound.update ({
-          nom: (nom ? nom : userFound.nom),
-          prenom: (prenom ? prenom : userFound.prenom),
-          email: (email ? email : userFound.email),
-          bio: (bio ? bio : userFound.bio)
-        })
-        return res.status(201).json(userFound);
-      } else {
-      return res.status(500).json({ 'error': 'unable to verify user' })
-      }
-  }).catch((err) => res.status(500).json({ err }));
+
+  if (user_id == userId) {
+    models.User.findOne({
+      attributes: ['id', 'nom', 'prenom', 'bio', 'imageUrl'],
+      where: { id: userId }
+    })
+      .then((userFound) => {
+        if (userFound != null) {
+          userFound.update({
+            nom: (nom ? nom : userFound.nom),
+            prenom: (prenom ? prenom : userFound.prenom),
+            bio: (bio ? bio : userFound.bio),
+          })
+          return res.status(201).json(userFound);
+        } else {
+          return res.status(500).json({ 'error': 'unable to verify user' })
+        }
+      }).catch((err) => res.status(500).json({ err }));
+  } else {
+    return res.status(500).json({ 'error': 'unable to verify user' })
+  }
 };
 
-// suppression d'un compte
-// exports.deleteProfile = (req, res, next) => {
-//   // const headerAuth = req.headers['authorization'];
-//   // const userId = jwtUtils.getUserId(headerAuth);
-//   const userId = req.params.id;
-
-//   if (userId != null) {
-//     models.User.findByPk(userId)
-//       .then (user => { 
-//         if (user != null) {
-//           models.User.destroy({
-//             where: { id: user.id}
-//           })
-//           .then(() => res.end())
-//           .catch(err => res.status(500).json(err));
-//         }
-//       })
-//   } else {
-//     res.status(500).json({ error: 'Impossible de supprimer ce compte' })
-//   }
-// };
-
-exports.deleteProfile = (req, res) => {
-  //récupération de l'id de l'user
-  let userId = req.params.id;
-  if (userId != null) {
-      //Recherche sécurité si user existe bien
-      models.User.findByPk(userId)
-          .then(user => {
-              if (user != null) {
-                  //Delete de tous les posts de l'user même s'il y en a pas
-                  // models.Post
-                  //     .destroy({
-                  //         where: { userId: user.id }
-                  //     })
-                  //     .then(() => {
-                  //         console.log('Tous les posts de cet user ont été supprimé');
-                          //Suppression de l'utilisateur
-                          models.User
-                              .destroy({
-                                  where: { id: user.id }
-                              })
-                              .then(() => res.end())
-                              .catch(err => console.log(err))
-                      // })
-                      .catch(err => res.status(500).json(err))
-              }
-              else {
-                  res.status(401).json({ error: 'Cet user n\'existe pas' })
-              }
-          })
+exports.modifyPicture = (req, res, next) => {
+  if (req.file) {
+    console.log('true');
   } else {
-      res.status(500).json({ error: 'Impossible de supprimer ce compte, contacter un administrateur' })
+    console.log('false');
   }
-}
+};
+
+
+// suppression d'un utilisateur
+exports.deleteUser = (req, res) => {
+  //récupération de l'id de l'user
+  let headerAuth = req.headers['authorization'];
+  let userId = jwtUtils.getUserId(headerAuth);
+  // let userId = req.params.id
+
+  if (userId != null) {
+    //Recherche sécurité si user existe bien
+    models.User.findOne({
+      where: { id: userId }
+    }).then(user => {
+      if (user != null) {
+        //Delete de tous les posts de l'user même s'il y en a pas
+        models.Post.destroy({
+          where: { userId: user.id }
+        }).then(() => {
+          console.log('Tous les posts de cet user ont été supprimé');
+          //Suppression de l'utilisateur
+          models.User.destroy({
+            where: { id: user.id }
+          }).then(() => res.end())
+            .catch(err => console.log(err))
+        }).catch(err => res.status(500).json(err))
+      }
+      else {
+        res.status(401).json({ error: 'Cet user n\'existe pas' })
+      }
+    })
+  } else {
+    res.status(500).json({ error: 'Impossible de supprimer ce compte, contacter un administrateur' })
+  }
+};
