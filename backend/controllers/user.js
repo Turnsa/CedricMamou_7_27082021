@@ -5,6 +5,7 @@ const fs = require('fs');
 // const asyncLib = require('async');
 
 // regex
+const NAME_REGEX = ("^[a-zA-Z ,.'-]+$");
 const EMAIL_REGEX = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PASSWORD_REGEX = /^(?=.*\d).{4,8}$/;
 
@@ -23,12 +24,12 @@ exports.login = (req, res, next) => {
   })
     .then(user => {
       if (!user) {
-        return res.status(401).json({ error: 'user not in DB' });
+        return res.status(401).json({ error: 'Compte utilisateur introuvable' });
       }
       bcrypt.compare(password, user.password)
         .then(valid => {
           if (!valid) {
-            return res.status(401).json({ error: 'invalid password' });
+            return res.status(401).json({ error: 'Mot de passe invalide' });
           }
           res.status(200).json({
             userId: user.id,
@@ -46,7 +47,7 @@ exports.signup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const bio = req.body.bio;
-  const photo = `${req.protocol}://${req.get('host')}/images/profile/anonyme.png`;
+  const photo = `${req.protocol}://${req.get('host')}/images/default/anonyme.png`;
 
 
   if (nom == null || prenom == null || email == null || password == null) {
@@ -82,7 +83,7 @@ exports.signup = (req, res, next) => {
           email: email,
           password: bcryptPassword,
           bio: bio,
-          photo_profil: photo,
+          imageUrl: photo,
           isAdmin: 0
         }).then(newUser => {
           res.status(201).json({ 'id': newUser.id, message: 'user create' });
@@ -102,16 +103,15 @@ exports.signup = (req, res, next) => {
 exports.getOneUser = (req, res, next) => {
   let headerAuth = req.headers['authorization'];
   let userId = jwtUtils.getUserId(headerAuth);
-
+  let id = req.params.id;
   if (userId < 0)
     return res.status(400).json({ 'error': 'wrong token' });
 
-  models.User.findOne({
-    attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'photo_profil'],
-    where: { id: userId }
+  models.User.findByPk(id, {
+    attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'imageUrl', 'isAdmin'],
   }).then(function (user) {
     if (user) {
-      res.status(201).json(user);
+      res.status(200).json(user);
     } else {
       res.status(404).json({ 'error': 'user not found' });
     }
@@ -125,7 +125,7 @@ exports.getOneUser = (req, res, next) => {
   exports.getAllUsers = async (req, res, next) => {
     try {
       const user = await models.User.findAll({
-        attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'photo_profil', 'isAdmin']
+        attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'imageUrl', 'isAdmin']
 
       });
       res.status(200).json(user);
@@ -140,26 +140,38 @@ exports.updateUser = (req, res, next) => {
   let headerAuth = req.headers['authorization'];
   let user_id = jwtUtils.getUserId(headerAuth);
   let userId = req.params.id;
-  // const filename = user.photo.split("/images/profile")[1];
+  // const filename = user.photo.split("/images/")[1];
 
   const nom = req.body.nom;
   const prenom = req.body.prenom;
   const bio = req.body.bio;
+  const password = req.body.password;
 
 
   if (user_id == userId) {
-    models.User.findOne({
+    
+    if (!PASSWORD_REGEX.test(password) && password != "") {
+      return res.status(435).json({ 'error': 'password invalid (must length 4 - 8 and include 1 number at least)' });
+    }
+  
+      models.User.findOne({
       attributes: ['id', 'nom', 'prenom', 'bio', 'imageUrl'],
       where: { id: userId }
     })
       .then((userFound) => {
         if (userFound != null) {
-          userFound.update({
-            nom: (nom ? nom : userFound.nom),
-            prenom: (prenom ? prenom : userFound.prenom),
-            bio: (bio ? bio : userFound.bio),
+          bcrypt.hash(password, 10, function (err, bcryptPassword) {
+          const updatedUser = userFound.update({
+            nom: (nom != "" ? nom : userFound.nom),
+            prenom: (prenom != "" ? prenom : userFound.prenom),
+            bio: (bio != "" ? bio : userFound.bio),
+            password: (password != "" ? bcryptPassword : userFound.password)
+          }).then(userUpdated => {
+            res.status(201).json({'id': userUpdated.id, message: 'user updated'});
+          }).catch(err => {
+            res.status(500).json({ err });
           })
-          return res.status(201).json(userFound);
+        })
         } else {
           return res.status(500).json({ 'error': 'unable to verify user' })
         }
@@ -170,11 +182,33 @@ exports.updateUser = (req, res, next) => {
 };
 
 exports.modifyPicture = (req, res, next) => {
-  if (req.file) {
-    console.log('true');
-  } else {
-    console.log('false');
-  }
+  let headerAuth = req.headers['authorization'];
+  let user_id = jwtUtils.getUserId(headerAuth);
+  let userId = req.params.id;
+
+  let imageUrl = (req.file) ? `${req.protocol}://${req.get('host')}/images/${req.file.filename}` : null;
+
+  if (user_id == userId) {
+
+    models.User.findOne({
+      where: {  id: userId }
+    })
+      .then((userFound) => {
+        if (userFound != null) {
+          const updatedUser = userFound.update({
+            imageUrl: (imageUrl != "" ? imageUrl : userFound.imageUrl)
+          }).then(pictureUpdate => {
+            res.status(201).json({'id': pictureUpdate.id, message: 'user updated'});
+          }).catch(err => {
+            res.status(500).json({ err });
+          })
+        } else {
+          return res.status(500).json({ 'error': 'unable to verify user' })
+        }
+      }).catch((err) => res.status(500).json({ err }));
+    } else {
+      return res.status(500).json({ 'error': 'unable to verify user' })
+    }
 };
 
 

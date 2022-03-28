@@ -8,7 +8,7 @@ exports.createPost = (req, res, next) => {
   let headerAuth = req.headers['authorization'];
   let userId = jwtUtils.getUserId(headerAuth);
   let content = req.body.content;
-  let imageURL = (req.file) ? `${req.protocol}://${req.get('host')}/images/post/${req.file.filename}` : null;
+  let imageURL = (req.file) ? `${req.protocol}://${req.get('host')}/images/${req.file.filename}` : null;
   let like = 0;
   let comment = 0;
   console.log(userId);
@@ -31,13 +31,13 @@ exports.createPost = (req, res, next) => {
           })
       }
     }).catch(error => {
-      res.status(500).json(error)
+      res.status(345).json(error)
     })
 };
 
 exports.getAllPost = (req, res, next) => {
   models.Post.findAll({
-    attributes: ["id", "content", "imageURL", "createdAt"],
+    attributes: ["id", "content", "imageURL", "comment", "createdAt"],
     order: [["createdAt", "DESC"]],
     include: [{
       model: models.User,
@@ -53,9 +53,9 @@ exports.getAllPost = (req, res, next) => {
     }
     ]
   }).then((post) => {
-    res.status(324).json(post)
+    res.status(200).json(post)
   }).catch((error) => {
-    res.status(789).json(error)
+    res.status(500).json(error)
   })
 };
 
@@ -72,14 +72,16 @@ exports.deletePost = async (req, res, next) => {
     let headerAuth = req.headers['authorization'];
     let userId = jwtUtils.getUserId(headerAuth);
     const post = await models.Post.findOne({ where: { id: req.params.id } });
-    if (userId === post.UserId) {
+    if (userId === post.UserId || req.body.isAdmin == true) {
       if (post.imageURL) {
         const filename = post.imageURL.split("/images")[1];
-        fs.unlink(`images/post/${filename}`, () => {
+        fs.unlink(`images/${filename}`, () => {
+          models.Comment.destroy({ where: { postId: post.id }}, { truncate: true })
           models.Post.destroy({ where: { id: req.params.id } });
           res.status(200).json({ message: "Post supprimé" });
         });
       } else {
+        models.Comment.destroy({ where: { postId: post.id }}, { truncate: true })
         models.Post.destroy({ where: { id: post.id } }, { truncate: true });
         res.status(200).json({ message: "Post supprimé" });
       }
@@ -127,7 +129,7 @@ exports.createComment = async (req, res) => {
 
 exports.getAllComment = (req, res, next) => {
   models.Comment.findAll({
-    attributes: ["id", "comment"],
+    attributes: ["id", "comment", "createdAt"],
     order: [["createdAt", "DESC"]],
     include: [{
       model: models.User,
@@ -139,9 +141,9 @@ exports.getAllComment = (req, res, next) => {
     }
     ]
   }).then((comment) => {
-    res.status(324).json(comment)
+    res.status(200).json(comment)
   }).catch((error) => {
-    res.status(789).json(error)
+    res.status(500).json(error)
   })
 };
 
