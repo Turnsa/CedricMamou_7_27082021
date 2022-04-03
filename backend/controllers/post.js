@@ -59,20 +59,31 @@ exports.getAllPost = (req, res, next) => {
   })
 };
 
-// exports.getPostByUser = (req, res, next) => {
+// exports.getPostById = (req, res, next) => {
 
 // };
 
-// exports.modifyPost = (req, res, next) => {
+exports.updatePost = (req, res, next) => {
+  const comment = req.body.comment;
 
-// };
+  models.Post.findOne({ where: { id: req.params.id }})
+  .then((postFound) => {
+    const updatedPost = postFound.update({
+      comment: comment,
+    }).then(updatedPost => {
+      res.status(201).json({'id': updatedPost.id, message: 'post updated'});
+    }).catch(err => {
+      res.status(555).json({ err });
+    })
+  }).catch((err) => res.status(500).json({ err }));
+};
 
 exports.deletePost = async (req, res, next) => {
   try {
     let headerAuth = req.headers['authorization'];
     let userId = jwtUtils.getUserId(headerAuth);
     const post = await models.Post.findOne({ where: { id: req.params.id } });
-    if (userId === post.UserId || req.body.isAdmin == true) {
+    if (userId === post.UserId || req.body.isAdmin === true) {
       if (post.imageURL) {
         const filename = post.imageURL.split("/images")[1];
         fs.unlink(`images/${filename}`, () => {
@@ -152,7 +163,7 @@ exports.deleteComment = async (req, res, next) => {
     let headerAuth = req.headers['authorization'];
     let userId = jwtUtils.getUserId(headerAuth);
     const comment = await models.Comment.findOne({ where: { id: req.params.id } });
-    if (userId === comment.UserId) {
+    if (userId === comment.UserId || req.body.isAdmin === true) {
       models.Comment.destroy({ where: { id: comment.id } }, { truncate: true });
       res.status(200).json({ message: "Commentaire supprimé" });
     } else {
