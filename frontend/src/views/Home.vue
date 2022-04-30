@@ -3,22 +3,24 @@
     <Header />
     <div class="main">
       <!-- section new post -->
-    <div class="card col-5 newPost">
+    <div class="newPost card col-lg-7 col-xl-5">
       <div class="newPost__infos">
-        <img @click="toProfile(currentUser.userId)" class="newPost__imgProfile" :src="user.imageUrl" alt="photo de profil">
+        <img @click="toProfile(currentUser.userId)" class="imgProfile" :src="user.imageUrl" alt="photo de profil">
         <input type="text" v-model.trim="content" class="newPost__text" placeholder="Quoi de neuf ?">
       </div>
       <div class="newPost__publish">
         <input type="file" @change="uploadImage" name="image" id="image" accept="image/png, image/jpeg, image/jpg, image/gif">
-        <button type="submit" @click="newPost()" class="btn btn-primary">Publier</button>
+        <button type="submit" @click="newPost()" class="btn btn-primary btn-newPost">Publier</button>
       </div>
     </div>
     <!-- section wall -->
-      <div class="allPosts card col-5" v-for="post in posts" :key="post.id">
+      <div class="allPosts card col-lg-7 col-xl-5" v-for="post in posts" :key="post.id">
         <div class="allPosts__header">
-          <img @click="toProfile(post.User.id)" class="allPosts__imgProfile" :src="post.User.imageUrl" alt="photo de profil">
-          <h2> {{ post.User.nom }} {{ post.User.prenom }}</h2>
-          <p>posté le {{ formatDate(post.createdAt) }}</p>
+          <img @click="toProfile(post.User.id)" class="imgProfile" :src="post.User.imageUrl" alt="photo de profil">
+          <div class="allPosts__infos">
+            <h2> {{ post.User.nom }} {{ post.User.prenom }}</h2>
+            <p>posté le {{ formatDate(post.createdAt) }}</p>
+          </div>
           <div v-if="currentUser.userId == post.User.id || user.isAdmin" @click="deletePost(post.id)" class="deletePost">
             <i class="deleteCrossPost fa-solid fa-xmark"></i>
           </div>
@@ -27,33 +29,35 @@
           <h3> {{ post.content }}</h3>
         </div>
           <img v-if="post.imageURL!= null" class="allPosts__photo" :src="post.imageURL" alt="photo de publicaiton">
-        <div class="allPosts__comment">
           <!-- section commentaire -->
+        <div class="allPosts__comment">
           <div class="allPosts__publish">
-            <input class="allPosts__input" v-model.trim="comment" type="text" placeholder="Ecrivez un commentaire...">
+            <input class="allPosts__input" v-model.trim="contentComment" type="text" placeholder="Ecrivez un commentaire...">
             <button @click="newComment(post.id)" class="btn btn-primary">Commenter</button>
           </div>
-          <div @click="showComments(post.id)">
-            <p>Afficher les commentaires</p>
+          <div class="allPosts__showComment">
+            <p @click="showComments()" class="showComment">Afficher les commentaires  ({{post.Comments.length}})</p>
           </div>
           <div v-show="hiddenComment" v-for="comment in comments" :key="comment.id">
-            <div class="allPosts__content" v-if="post.id == comment.Post.id">
+            <div class="comment" v-if="post.id == comment.Post.id">
+              <div class="comment__imgProfile">
+                <img @click="toProfile(comment.User.id)" class="imgProfile" :src="comment.User.imageUrl" alt="photo de profil">
+              </div>
+              <div class="comment__content">
+                <div class="comment__nomEtComment">
+                  <div class="comment__name">
+                    {{ comment.User.nom }} {{ comment.User.prenom }}
+                  </div>
+                  <div class="comment__comment">
+                    {{ comment.comment }}
+                  </div>
+                </div>
+                <div class="comment__date">
+                  Posté le {{ formatDate(comment.createdAt) }}
+                </div>
+              </div>
               <div v-if="currentUser.userId == comment.User.id || user.isAdmin" @click="deleteComment(comment.id)">
                 <i class="deleteCrossComment fa-solid fa-xmark"></i>
-              </div>
-              <div>
-                <img @click="toProfile(comment.User.id)" class="photoProfile" :src="comment.User.imageUrl" alt="photo de profil">
-              </div>
-              <div class="nomEtComment">
-                <div class="name">
-                  {{ comment.User.nom }} {{ comment.User.prenom }}
-                </div>
-                <div class="content">
-                  {{ comment.comment }}
-                </div>
-              </div>
-              <div class="date">
-                Posté le {{ formatDate(comment.createdAt) }}
               </div>
             </div>
           </div>
@@ -82,8 +86,8 @@ export default {
       posts: [],
       comments: [],
       content: "",
+      contentComment: "",
       imageURL: null,
-      comment: "",
       errorContent: false,
     }
   },
@@ -92,19 +96,13 @@ export default {
       this.$router.push('/');
       return ;
     }
-    // this.$store.dispatch('getUserById');
     this.getCurrentUser();
     this.getPosts();
-  },
-  computed: {
-    // ...mapState({
-    //   user: 'user',
-    // }),
   },
   methods: {
     formatDate(input) {
       var datePart = input.match(/\d+/g),
-        year = datePart[0].substring(2), // get only two digits
+        year = datePart[0].substring(2),
         month = datePart[1],
         day = datePart[2];
       return day + "/" + month + "/" + year;
@@ -121,7 +119,6 @@ export default {
         }
       }).then((res) => {
         this.user = res.data;
-        console.log(res.data);
       })
     },
     /**** Posts ****/
@@ -146,6 +143,7 @@ export default {
           }
         }).then((response) => {
           self.content= '';
+          self.imageURL = null;
           self.getPosts();
           console.log(response);
         }).catch((error) => {
@@ -164,7 +162,7 @@ export default {
         this.posts = res.data;
         console.log(res.data);
       });
-      axios.get("http://localhost:3000/api/post/comment", {
+        axios.get("http://localhost:3000/api/post/comment", {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.currentUser.token}` 
@@ -183,6 +181,7 @@ export default {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${this.currentUser.token}`
               },
+            data: { isAdmin: self.user.isAdmin}
           })
           .then((response) => {
             console.log(response);
@@ -197,39 +196,34 @@ export default {
       this.hiddenComment = !this.hiddenComment;
     },
     newComment(id) {
-      if (this.comment == "") {
+      // const self = this
+      if (this.contentComment == "") {
         this.errorContent = true;
       } else {
         axios.post(`http://localhost:3000/api/post/${id}/comment`, {
-          comment: this.comment
+          comment: this.contentComment
         }, {
           headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.currentUser.token}` 
         }
         }).then((response) => {
-        this.comment= "";
+        this.contentComment= "";
         this.getPosts();
-        console.log(response);
-      }).catch((error) => {
-        console.log(error);
-      });
-      // axios.get(`http://localhost:3000/api/post/${id}`), {
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Authorization": `Bearer ${this.currentUser.token}` 
-      //   }
-      // }.then((res) => {
-      //   console.log(res.data);
-      // })
+        console.log(response.data);
+        }).catch((error) => {
+          console.log(error);
+        });
       }
     },
     deleteComment(id) {
+      const self = this;
       axios.delete(`http://localhost:3000/api/post/Comment/${id}`, {
             headers: { 
               "Content-Type": "application/json",
               "Authorization": `Bearer ${this.currentUser.token}`
               },
+            data: { isAdmin: self.user.isAdmin}
           })
           .then((response) => {
             console.log(response);
@@ -244,106 +238,155 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.main {
-  margin-bottom: 30px;
-}
-p{
-  margin: 0;
-}
-.error {
-  color: red;
-  margin: 0;
-}
-.card{
-  padding: 20px;
-  border-radius: 20px;
-}
-.newPost {
+.card {
   margin: auto;
-  align-items: center;
-  gap: 1em;
-  &__publish {
-    display: flex;
-  }
-  &__infos {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-  }
-  &__text {
-    border: solid 1px;
-    border-radius: 8px;
-    padding: 8px;
-    width: 85%;
-    background: #f2f2f2;
-  }
-  &__imgProfile{
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  font-size: 0.8em;
+}
+.imgProfile{
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
   &:hover {
     cursor: pointer;
   }
+}
+.newPost {
+  gap: 1em;
+  padding: 10px;
+  &__infos {
+    display: flex;
+    justify-content: space-between;
+    @media (min-width: 768px) {
+      padding: 0 150px;
+    }
+    @media (min-width: 992px) {
+      padding: 0 50px;
+    }
+  }
+  &__text {
+  border: solid 1px;
+  border-radius: 8px;
+  padding: 8px;
+  width: 80%;
+  background: #f2f2f2;
+  @media (min-width: 768px) {
+    width: 100%;
+    margin-left: 20px;
+    margin-right: 50px;
+  }
+  @media (min-width: 992px) {
+    width: 100%;
+    // margin-left: 50px;
+  }
+  }
+  &__publish {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    @media (min-width: 768px) {
+      padding: 0 200px 0 150px;
+    }
+    @media (min-width: 992px) {
+      padding: 0 50px;
+    }
   }
 }
+h2 {
+  font-size: 1.7em;
+  margin-bottom: 0;
+}
+p {
+  margin-bottom: 0;
+}
+.btn-newPost {
+  @media (min-width: 992px) {
+      margin-right: 50px;
+  }
+}
+
 .allPosts {
-  margin: 20px auto;
   &__header {
     display: flex;
     align-items: center;
     gap: 1em;
+    margin: 10px;
+  }
+  &__title {
+    margin-left: 10px;
   }
   &__photo {
-    width: 100%;
-  }
-  &__comment {
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-  }
-  &__publish {
     margin-bottom: 10px;
   }
+  &__comment {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  &__publish {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    @media (min-width: 768px) {
+      padding: 0 20px;
+    }
+  }
   &__input {
+    width: 60%;
     background: #f2f2f2;
-    border-radius: 8px;
     border: solid 1px;
-    height: 38px;
-    width: 50%;
+    border-radius: 8px;
     padding: 8px;
-    margin-right: 30px;
+  }
+  &__showComment {
+    @media (min-width: 768px) {
+      padding: 0 20px;
+    }
+  }
+}
+.showComment {
+  display: inline-block;
+  cursor: pointer;
+}
+.comment {
+  display: flex;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  @media (min-width: 768px) {
+      padding: 0 20px;
+    }
+  &__imgProfile {
+    margin-right: 10px;
   }
   &__content {
-    display: flex;
-    align-items: center;
-    margin: 10px 20px;
+    width: 70%;
   }
-  &__imgProfile{
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  &:hover {
-    cursor: pointer;
+  &__nomEtComment {
+    background-color: #f2f2f2;
+    border-radius: 10px;
+    padding: 5px 10px;
+  }
+  &__name {
+    font-weight: 500;
+  }
+  &__date {
+    padding-left: 5px;
   }
 }
-}
-.deleteCrossPost{
+.deleteCrossPost {
+  cursor: pointer;
   position: absolute;
-  top: 15px;
+  top: 10px;
+  right: 10px;
+}
+.deleteCrossComment {
+  cursor: pointer;
+  position: relative;
   right: 15px;
-  cursor: pointer;
-}
-.deleteCrossComment{
-  position: absolute;
-  cursor: pointer;
-}
-.photoProfile{
-  border-radius: 50%;
-  height: 50px;
-  width: 50px;
-}
-.nomEtComment {
-  margin-left: 20px;
+  top: 3px;
 }
 </style>

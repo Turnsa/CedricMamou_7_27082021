@@ -30,7 +30,6 @@ export default createStore({
     storage: storage,
     user: {},
     // post: {},
-
     // users: [],
     // posts: [],
   },
@@ -107,13 +106,6 @@ export default createStore({
         commit("GET_USER_BY_ID", user);
       });
     },
-    // getUsersInfos: ({commit}) => {
-    //   instance.get('user/')
-    //     .then((response) => {
-    //       commit('users', response.data);
-    //     }).catch(() => {
-    //     })
-    // },
   },
   modules: {
   }

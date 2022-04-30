@@ -1,12 +1,11 @@
 <template>
     <div class="blocModale" v-if="revelePhoto">
         <div class="overlay" @click="toggleModalePhoto"></div>
-        <div class="modale card col-4 offset-4">
+        <div class="modale card  col-md-8 col-xl-4 ">
             <div @click="toggleModalePhoto" class="btn-modale btn btn-danger">X</div>
             <h2>Voulez-vous changer de photo de profil ?</h2>
-            <div class="">
+            <div class="update">
                 <input type="file" @change="uploadImage" ref="fileInput" name="image" id="image" accept="image/png, image/jpeg, image/jpg">
-                <!-- <button @click="$refs.fileInput.click()" class="btn btn-primary">Selectionner une photo</button> -->
                 <button @click="changePhoto()" class="btn btn-primary">Cliquez pour valider</button>
             </div>
         </div>
@@ -46,7 +45,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.bloc-modale {
+.blocModale {
   position: fixed;
   top: 0;
   bottom: 0;
@@ -70,15 +69,20 @@ export default {
   padding: 50px;
   position: fixed;
 }
+h2 {
+    font-size: 1.5em;
+    text-align: center;
+}
+.update {
+    display: flex;
+    flex-direction: column;
+}
 .btn-modale {
   position: absolute;
   top: 10px;
   right: 10px;
 }
-.btn-oui{
-    width: 30%;
-}
-.btn-non{
-    width: 30%;
+.btn {
+    margin-top: 10px;
 }
 </style>

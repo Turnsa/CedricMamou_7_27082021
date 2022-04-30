@@ -1,29 +1,27 @@
 <template>
   <div class="blocModale" v-if="reveleUpdate">
     <div class="overlay" @click="toggleModaleUpdate"></div>
-    <div class="modale card col-4 offset-4" v-if="beforeUpdate">
+    <div class="modale card col-md-8 col-xl-4" v-if="beforeUpdate">
       <div @click="toggleModaleUpdate" class="btn-modale btn btn-danger">X</div>
+      <h2>Voulez-vous modifier ce compte ?</h2>
       <div class="modale__content">
-        <div class="updateInfos form-row">
-        <div>
-            <input v-model.trim="nom" class="form-row__input" type="text" placeholder="Nom"/>
-            <p class="error" v-if="errorNom == true">Nom invalide</p>
+        <div class="update">
+          <div>
+              <input v-model.trim="nom" class="form-row__input" type="text" placeholder="Nom"/>
+          </div>
+          <div>
+              <input v-model.trim="prenom" class="form-row__input" type="text" placeholder="Prénom"/>
+          </div>
+          <div>
+              <input v-model.trim="password" class="form-row__input" type="password" placeholder="Mot de passe"/>
+          </div>
         </div>
-        <div>
-            <input v-model.trim="prenom" class="form-row__input" type="text" placeholder="Prénom"/>
-            <p class="error" v-if="errorPrenom == true">Prénom invalide</p>
+        <div class="validate">
+          <button class="btn btn-primary" @click="updateAccount()">Valider les modifications</button>
         </div>
-        <div>
-            <input v-model.trim="password" class="form-row__input" type="password" placeholder="Mot de passe"/>
-            <p class="error" v-if="errorPassword == true">{{ errorPassword.error}}</p>
-        </div>
-      </div>
-      <div class="validate">
-        <button class="btn btn-primary" @click="updateAccount()">Valider les modifications</button>
-      </div>
       </div>
     </div>
-    <div class="modale card col-4 offset-4" v-else>
+    <div class="modale card col-md-8 col-xl-4" v-else>
         <div @click="toggleModaleUpdate" class="btn-modale btn btn-danger">X</div>
         <p class="modale__succes">Votre compte a été modifié.</p>
     </div>
@@ -84,7 +82,6 @@ export default {
             self.prenom="",
             self.password="",
             self.beforeUpdate= false,
-            // this.$store.dispatch('getUserById');
             console.log(response);
         }).catch((error) => {
           console.dir(error.response.data.error);
@@ -99,7 +96,7 @@ export default {
 p {
   margin: 0;
 }
-.bloc-modale {
+.blocModale {
   position: fixed;
   top: 0;
   bottom: 0;
@@ -133,6 +130,10 @@ p {
     justify-content: center;
   }
 }
+h2 {
+    font-size: 1.5em;
+    text-align: center;
+}
 .btn-modale {
   position: absolute;
   top: 10px;
@@ -143,7 +144,7 @@ p {
     margin-bottom: 5px;
   }
 }
-.updateInfos {
+.update {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;

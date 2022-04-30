@@ -1,10 +1,10 @@
 <template>
     <div class="blocModale" v-if="reveleDelete">
         <div class="overlay" @click="toggleModaleDelete"></div>
-        <div class="modale card col-4 offset-4">
+        <div class="modale card col-md-8 col-xl-4">
             <div @click="toggleModaleDelete" class="btn-modale btn btn-danger">X</div>
             <h2>Voulez-vous vraiment supprimer ce compte ?</h2>
-            <div class="">
+            <div class="button">
                 <button @click="deleteAccount()" class="btn-oui btn btn-danger">Oui</button>
                 <button @click="toggleModaleDelete" class="btn-non btn btn-primary">Non</button>
             </div>
@@ -43,7 +43,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.bloc-modale {
+.blocModale {
   position: fixed;
   top: 0;
   bottom: 0;
@@ -67,15 +67,23 @@ export default {
   padding: 50px;
   position: fixed;
 }
+h2 {
+    font-size: 1.5em;
+    text-align: center;
+}
+.button {
+    display: flex;
+    justify-content: space-between;
+}
 .btn-modale {
   position: absolute;
   top: 10px;
   right: 10px;
 }
 .btn-oui{
-    width: 30%;
+    width: 45%;
 }
 .btn-non{
-    width: 30%;
+    width: 45%;
 }
 </style>
