@@ -217,7 +217,6 @@ exports.deleteUser = (req, res) => {
   //récupération de l'id de l'user
   let headerAuth = req.headers['authorization'];
   let userId = jwtUtils.getUserId(headerAuth);
-  // let userId = req.params.id
 
   if (userId != null) {
     //Recherche sécurité si user existe bien
@@ -225,10 +224,10 @@ exports.deleteUser = (req, res) => {
       where: { id: userId }
     }).then(user => {
       if (user != null) {
-        //Delete de tous les posts de l'user même s'il y en a pas
-        models.Post.destroy({
-          where: { userId: user.id }
-        }).then(() => {
+        //Delete de tous les posts et commentaires de l'user
+        models.Post.destroy({ where: { userId: user.id } })
+        models.Comment.destroy({ where: { userId: user.id } })
+        .then(() => {
           console.log('Tous les posts de cet user ont été supprimé');
           //Suppression de l'utilisateur
           models.User.destroy({

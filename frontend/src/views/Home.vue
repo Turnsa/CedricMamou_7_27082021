@@ -14,7 +14,7 @@
       </div>
     </div>
     <!-- section wall -->
-      <div class="allPosts card col-lg-7 col-xl-5" v-for="post in posts" :key="post.id">
+      <div class="allPosts card col-lg-7 col-xl-5" v-for="post in posts" :key="post.id" :postId="post.id">
         <div class="allPosts__header">
           <img @click="toProfile(post.User.id)" class="imgProfile" :src="post.User.imageUrl" alt="photo de profil">
           <div class="allPosts__infos">
@@ -28,40 +28,9 @@
         <div class="allPosts__title">
           <h3> {{ post.content }}</h3>
         </div>
-          <img v-if="post.imageURL!= null" class="allPosts__photo" :src="post.imageURL" alt="photo de publicaiton">
+        <img v-if="post.imageURL!= null" class="allPosts__photo" :src="post.imageURL" alt="photo de publicaiton">
           <!-- section commentaire -->
-        <div class="allPosts__comment">
-          <div class="allPosts__publish">
-            <input class="allPosts__input" v-model.trim="contentComment" type="text" placeholder="Ecrivez un commentaire...">
-            <button @click="newComment(post.id)" class="btn btn-primary">Commenter</button>
-          </div>
-          <div class="allPosts__showComment">
-            <p @click="showComments()" class="showComment">Afficher les commentaires  ({{post.Comments.length}})</p>
-          </div>
-          <div v-show="hiddenComment" v-for="comment in comments" :key="comment.id">
-            <div class="comment" v-if="post.id == comment.Post.id">
-              <div class="comment__imgProfile">
-                <img @click="toProfile(comment.User.id)" class="imgProfile" :src="comment.User.imageUrl" alt="photo de profil">
-              </div>
-              <div class="comment__content">
-                <div class="comment__nomEtComment">
-                  <div class="comment__name">
-                    {{ comment.User.nom }} {{ comment.User.prenom }}
-                  </div>
-                  <div class="comment__comment">
-                    {{ comment.comment }}
-                  </div>
-                </div>
-                <div class="comment__date">
-                  Posté le {{ formatDate(comment.createdAt) }}
-                </div>
-              </div>
-              <div v-if="currentUser.userId == comment.User.id || user.isAdmin" @click="deleteComment(comment.id)">
-                <i class="deleteCrossComment fa-solid fa-xmark"></i>
-              </div>
-            </div>
-          </div>
-        </div>
+          <Comment :postId="post.id"/>
       </div>
     </div>
   </div>
@@ -69,6 +38,7 @@
 
 <script>
 import Header from "@/components/Header.vue";
+import Comment from "@/components/Comment.vue";
 import axios from "axios";
 // import {mapState} from "vuex";
 
@@ -76,6 +46,7 @@ export default {
   name: "Home",
   components: {
     Header,
+    Comment,
   },
   data() {
     return {
@@ -98,6 +69,7 @@ export default {
     }
     this.getCurrentUser();
     this.getPosts();
+    this.getComments();
   },
   methods: {
     formatDate(input) {
@@ -160,18 +132,8 @@ export default {
       })
       .then((res) => {
         this.posts = res.data;
-        console.log(res.data);
-      });
-        axios.get("http://localhost:3000/api/post/comment", {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.currentUser.token}` 
-        }
-      })
-      .then((res) => {
-        this.comments = res.data;
-        console.log(res.data);
-      })
+        // console.log(res.data);
+      });   
     },
     deletePost(id) {
       const self = this;
@@ -210,11 +172,24 @@ export default {
         }).then((response) => {
         this.contentComment= "";
         this.getPosts();
+        this.getComments();
         console.log(response.data);
         }).catch((error) => {
           console.log(error);
         });
       }
+    },
+    getComments() {
+      axios.get("http://localhost:3000/api/post/comment", {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.currentUser.token}` 
+        }
+      })
+      .then((res) => {
+        this.comments = res.data;
+        // console.log(res.data);
+      })
     },
     deleteComment(id) {
       const self = this;
@@ -228,6 +203,7 @@ export default {
           .then((response) => {
             console.log(response);
             this.getPosts();
+            this.getComments();
           })
           .catch((error) => {
             console.log(error);
@@ -320,33 +296,6 @@ p {
   &__photo {
     margin-bottom: 10px;
   }
-  &__comment {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 10px;
-    margin-right: 10px;
-  }
-  &__publish {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    @media (min-width: 768px) {
-      padding: 0 20px;
-    }
-  }
-  &__input {
-    width: 60%;
-    background: #f2f2f2;
-    border: solid 1px;
-    border-radius: 8px;
-    padding: 8px;
-  }
-  &__showComment {
-    @media (min-width: 768px) {
-      padding: 0 20px;
-    }
-  }
 }
 .showComment {
   display: inline-block;
@@ -382,11 +331,5 @@ p {
   position: absolute;
   top: 10px;
   right: 10px;
-}
-.deleteCrossComment {
-  cursor: pointer;
-  position: relative;
-  right: 15px;
-  top: 3px;
 }
 </style>
