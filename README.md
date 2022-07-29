@@ -16,10 +16,26 @@
 
 NodeJs - VueJs - MySQL - Bootstrap - Sass
 
+## Backend
 
+Ouvrir le dossier Backend dans le terminal de votre éditeur puis exécuter la commande:
 
-Un compte admin est déjà présent dans la bdd :
-```
-        - admin@test.fr
-        - Azerty1
-```
+    npm install
+
+puis
+
+    nodemon server.js
+
+## Frontend
+
+Ouvrir le dossier Frontend dans le terminal de votre éditeur puis exécuter la commande:
+
+    npm install
+
+puis
+
+    npm run serve
+
+Puis ouvrir votre navigateur à l'adresse : 
+
+- http://localhost:8080/
