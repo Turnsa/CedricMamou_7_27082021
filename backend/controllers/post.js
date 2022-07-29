@@ -59,9 +59,17 @@ exports.getAllPost = (req, res, next) => {
   })
 };
 
-// exports.getPostById = (req, res, next) => {
-
-// };
+exports.getPostById = (req, res, next) => {
+  const id = req.params.id;
+  
+  models.Post.findByPk(id, {
+    attributes: ['id', 'userId', 'content', 'imageURL', 'like']
+  }).then((post) => {
+    res.status(200).json(post)
+  }).catch((error) => {
+    res.status(500).json(error)
+  })
+};
 
 exports.updatePost = (req, res, next) => {
   const comment = req.body.comment;

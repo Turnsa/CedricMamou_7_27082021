@@ -126,7 +126,6 @@ exports.getOneUser = (req, res, next) => {
     try {
       const user = await models.User.findAll({
         attributes: ['id', 'nom', 'prenom', 'email', 'bio', 'imageUrl', 'isAdmin']
-
       });
       res.status(200).json(user);
     } catch (error) {
