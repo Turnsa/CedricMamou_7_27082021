@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost:8889
--- Généré le : mar. 19 juil. 2022 à 14:13
+-- Généré le : ven. 29 juil. 2022 à 20:44
 -- Version du serveur : 5.7.34
 -- Version de PHP : 7.4.21
 
@@ -66,13 +66,6 @@ CREATE TABLE `Posts` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Déchargement des données de la table `Posts`
---
-
-INSERT INTO `Posts` (`id`, `userId`, `content`, `imageURL`, `like`, `comment`, `createdAt`, `updatedAt`) VALUES
-(7, 1, 'je suis admin', NULL, 0, 0, '2022-07-19 14:12:18', '2022-07-19 14:12:18');
 
 -- --------------------------------------------------------
 
@@ -168,7 +161,7 @@ ALTER TABLE `Users`
 -- AUTO_INCREMENT pour la table `Comments`
 --
 ALTER TABLE `Comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `Likes`
@@ -180,7 +173,7 @@ ALTER TABLE `Likes`
 -- AUTO_INCREMENT pour la table `Posts`
 --
 ALTER TABLE `Posts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `Users`
