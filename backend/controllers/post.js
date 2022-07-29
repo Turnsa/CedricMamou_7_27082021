@@ -59,25 +59,16 @@ exports.getAllPost = (req, res, next) => {
   })
 };
 
-exports.getPostById = (req, res, next) => {
-  const id = req.params.id;
-  
-  models.Post.findByPk(id, {
-    attributes: ['id', 'userId', 'content', 'imageURL', 'like']
-  }).then((post) => {
-    res.status(200).json(post)
-  }).catch((error) => {
-    res.status(500).json(error)
-  })
-};
-
 exports.updatePost = (req, res, next) => {
-  const comment = req.body.comment;
+  const headerAuth = req.headers['authorization'];
+  const user_id = jwtUtils.getUserId(headerAuth);
+  
+  const content = req.body.content;
 
-  models.Post.findOne({ where: { id: req.params.id }})
+    models.Post.findOne({ where: { id: req.params.id }})
   .then((postFound) => {
     const updatedPost = postFound.update({
-      comment: comment,
+      content: (content != "" ? content : postFound.content)
     }).then(updatedPost => {
       res.status(201).json({'id': updatedPost.id, message: 'post updated'});
     }).catch(err => {
@@ -182,6 +173,12 @@ exports.deleteComment = async (req, res, next) => {
   }
 };
 
-// exports.likedPost = (req, res, next) => {
-
-// };
+// Like
+exports.likedPost = (req, res, next) => {
+  const headerAuth = req.headers['authorization'];
+  const userId = jwtUtils.getUserId(headerAuth);
+  const postId = req.params.id;
+  models.Like.findOne ({
+    where: { userId: userId, postId: postId }
+  })
+};

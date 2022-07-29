@@ -136,10 +136,9 @@ exports.getOneUser = (req, res, next) => {
 
 // modification de profil
 exports.updateUser = (req, res, next) => {
-  let headerAuth = req.headers['authorization'];
-  let user_id = jwtUtils.getUserId(headerAuth);
-  let userId = req.params.id;
-  // const filename = user.photo.split("/images/")[1];
+  const headerAuth = req.headers['authorization'];
+  const user_id = jwtUtils.getUserId(headerAuth);
+  const userId = req.params.id;
 
   const nom = req.body.nom;
   const prenom = req.body.prenom;

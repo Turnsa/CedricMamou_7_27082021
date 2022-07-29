@@ -26,12 +26,8 @@ if (storage == null) {
 
 export default createStore({
   state: {
-    // status: '',
     storage: storage,
     user: {},
-    // post: {},
-    // users: [],
-    // posts: [],
   },
   mutations: {
     setStatus: function (state, status) {
@@ -55,15 +51,6 @@ export default createStore({
     GET_USER_BY_ID(state, user) {
       state.user = user;
     },
-    // users: function (state, users) {
-    //   state.users = users;
-    // },
-    // post: function (state, post) {
-    //   state.post = post;
-    // },
-    // posts: function (state, posts) {
-    //   state.posts = posts;
-    // },
   },
   actions: {
     // users

@@ -21,6 +21,19 @@
             <h2> {{ post.User.nom }} {{ post.User.prenom }}</h2>
             <p>posté le {{ formatDate(post.createdAt) }}</p>
           </div>
+          <div v-if="currentUser.userId == post.User.id || user.isAdmin" @click="modifyPost(post.id)" class="modifyPost">
+            <i class="fa-solid fa-ellipsis"></i>
+          </div>
+          <div class="blocModale" v-if="reveleUpdate">
+            <div class="overlay" @click="toggleModaleUpdate"></div>
+            <div class="modale card col-md-8 col-xl-4">
+              <h2>Modifier la publication</h2>
+              <input type="text" v-model.trim="newContent" placeholder="Votre nouvelle publication" class="newContent">
+              <div class="button">
+              <button @click="updatePublication()" class="btn btn-oui btn-primary">Modifier</button>
+              </div>
+            </div>
+          </div>
           <div v-if="currentUser.userId == post.User.id || user.isAdmin" @click="deletePost(post.id)" class="deletePost">
             <i class="deleteCrossPost fa-solid fa-xmark"></i>
           </div>
@@ -51,13 +64,14 @@ export default {
   data() {
     return {
       currentUser: JSON.parse(localStorage.getItem('storage')),
-      hiddenComment: false,
+      reveleUpdate: false,
       user: {},
       post: {},
       posts: [],
       comments: [],
       content: "",
-      contentComment: "",
+      newContent: "",
+      postId: "",
       imageURL: null,
       errorContent: false,
     }
@@ -135,6 +149,39 @@ export default {
         // console.log(res.data);
       });   
     },
+
+    // Modification d'une publication
+    modifyPost(id) {
+      console.log(id);
+      this.postId = id;
+      this.reveleUpdate = !this.reveleUpdate;
+    },
+    toggleModaleUpdate : function() {
+      this.reveleUpdate = !this.reveleUpdate;
+    },
+    updatePublication() {
+      const id = this.postId;
+
+      const self = this;
+
+      axios.put(`http://localhost:3000/api/post/${id}`,
+      {
+        content: self.newContent,
+      },
+      {
+        headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${this.currentUser.token}`
+                },
+      }).then((response) => {
+        self.postId="",
+        self.newContent="",
+        self.reveleUpdate = !self.reveleUpdate;
+        self.getPosts();
+        console.log(response);
+      })
+    },
+    // suppression d'un publication
     deletePost(id) {
       const self = this;
       // if (this.currentUser.token == userId) {
@@ -331,5 +378,51 @@ p {
   position: absolute;
   top: 10px;
   right: 10px;
+}
+.modifyPost {
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 25px;
+}
+.modale {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f1f1f1;
+  color: #333;
+  padding: 30px;
+  position: fixed;
+  box-shadow: 5px 5px 5px #9C9C9C;
+}
+.overlay {
+  background: rgba(255, 255, 255, 0);
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.blocModale {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.btn-oui{
+  margin-top:40px;
+  width: 150px;
+}
+.newContent {
+  margin-top: 30px;
+  padding: 15px;
+  width: 90%;
+  height: 50px;
+  border-radius: 15px;
+  font-size: 1.7em;
 }
 </style>
