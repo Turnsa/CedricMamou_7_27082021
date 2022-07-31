@@ -24,24 +24,28 @@
           <div v-if="currentUser.userId == post.User.id || user.isAdmin" @click="modifyPost(post.id)" class="modifyPost">
             <i class="fa-solid fa-ellipsis"></i>
           </div>
-          <div class="blocModale" v-if="reveleUpdate">
-            <div class="overlay" @click="toggleModaleUpdate"></div>
-            <div class="modale card col-md-8 col-xl-4">
-              <h2>Modifier la publication</h2>
-              <input type="text" v-model.trim="newContent" placeholder="Votre nouvelle publication" class="newContent">
-              <div class="button">
-              <button @click="updatePublication()" class="btn btn-oui btn-primary">Modifier</button>
-              </div>
-            </div>
-          </div>
           <div v-if="currentUser.userId == post.User.id || user.isAdmin" @click="deletePost(post.id)" class="deletePost">
             <i class="deleteCrossPost fa-solid fa-xmark"></i>
           </div>
         </div>
         <div class="allPosts__title">
-          <h3> {{ post.content }}</h3>
+          <h3>{{ post.content }}</h3>
         </div>
         <img v-if="post.imageURL!= null" class="allPosts__photo" :src="post.imageURL" alt="photo de publicaiton">
+        <!-- Modale modification -->
+          <div class="blocModale" v-if="reveleUpdate">
+            <div class="overlay" @click="toggleModaleUpdate"></div>
+            <div class="modale card col-md-8 col-xl-4">
+              <h2>Modifier la publication</h2>
+              <div class="inputModification">
+                <input type="text" v-model.trim="newContent" placeholder="Votre nouvelle publication" class="newContent">
+                <input type="file" @change="uploadImage2" name="image" id="image" class="newImageURL" accept="image/png, image/jpeg, image/jpg, image/gif">
+              </div>
+              <div class="button">
+              <button @click="updatePublication()" class="btn btn-oui btn-primary">Modifier</button>
+              </div>
+            </div>
+          </div>
           <!-- section commentaire -->
           <Comment :postId="post.id"/>
       </div>
@@ -53,7 +57,6 @@
 import Header from "@/components/Header.vue";
 import Comment from "@/components/Comment.vue";
 import axios from "axios";
-// import {mapState} from "vuex";
 
 export default {
   name: "Home",
@@ -111,9 +114,11 @@ export default {
     uploadImage (event) {
       this.imageURL = event.target.files[0]
     },
+    uploadImage2 (event) {
+      this.newImageURL = event.target.files[0]
+    },
     newPost () {
       const fd = new FormData();
-      // fd.append("userId", this.userId);
       if  (this.content != "") {
         fd.append("content", this.content);
       }
@@ -161,13 +166,17 @@ export default {
     },
     updatePublication() {
       const id = this.postId;
-
+      const fd = new FormData();
+      if  (this.newContent != "") {
+        fd.append("content", this.newContent);
+      }
+      // fd.append('image', this.imageURL, this.imageURL.name);
+      if (this.newImageURL) {
+        fd.append('image', this.newImageURL);
+      }
       const self = this;
 
-      axios.put(`http://localhost:3000/api/post/${id}`,
-      {
-        content: self.newContent,
-      },
+      axios.put(`http://localhost:3000/api/post/${id}`, fd, 
       {
         headers: {
                 "Content-Type": "application/json",
@@ -176,6 +185,7 @@ export default {
       }).then((response) => {
         self.postId="",
         self.newContent="",
+        self.imageURL = null;
         self.reveleUpdate = !self.reveleUpdate;
         self.getPosts();
         console.log(response);
@@ -344,10 +354,6 @@ p {
     margin-bottom: 10px;
   }
 }
-.showComment {
-  display: inline-block;
-  cursor: pointer;
-}
 .comment {
   display: flex;
   margin-top: 10px;
@@ -417,12 +423,22 @@ p {
   margin-top:40px;
   width: 150px;
 }
+.inputModification {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
 .newContent {
   margin-top: 30px;
+  margin-bottom: 30px;
   padding: 15px;
   width: 90%;
   height: 50px;
   border-radius: 15px;
   font-size: 1.7em;
+}
+.newImageURL {
+  font-size: 15px;
 }
 </style>

@@ -174,6 +174,10 @@ p {
 .showComment {
   display: inline-block;
   cursor: pointer;
+  &:hover {
+    color: #316CF4;
+    text-decoration: underline;
+  }
 }
 .comment {
   display: flex;

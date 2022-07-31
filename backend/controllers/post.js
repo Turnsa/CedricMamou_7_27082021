@@ -59,22 +59,28 @@ exports.getAllPost = (req, res, next) => {
   })
 };
 
-exports.updatePost = (req, res, next) => {
+exports.updatePost = async (req, res, next) => {
   const headerAuth = req.headers['authorization'];
-  const user_id = jwtUtils.getUserId(headerAuth);
-  
+  const userId = jwtUtils.getUserId(headerAuth);
   const content = req.body.content;
-
+  const imageURL = (req.file) ? `${req.protocol}://${req.get('host')}/images/${req.file.filename}` : null;;
+  const post = await models.Post.findOne({ where: { id: req.params.id } });
+  
+  if ( userId === post.UserId || req.body.isAdmin === true ) {
     models.Post.findOne({ where: { id: req.params.id }})
-  .then((postFound) => {
-    const updatedPost = postFound.update({
-      content: (content != "" ? content : postFound.content)
-    }).then(updatedPost => {
-      res.status(201).json({'id': updatedPost.id, message: 'post updated'});
-    }).catch(err => {
-      res.status(555).json({ err });
-    })
-  }).catch((err) => res.status(500).json({ err }));
+      .then((postFound) => {
+      const updatedPost = postFound.update({
+        content: (content != "" ? content : postFound.content),
+        imageURL: (imageURL != "" ? imageURL : postFound.imageURL)
+      }).then(updatedPost => {
+        res.status(201).json({'id': updatedPost.id, message: 'post updated'});
+      }).catch(err => {
+        res.status(555).json({ err });
+      })
+    }).catch((err) => res.status(500).json({ err }));
+  } else {
+    return res.status(500).json({ 'error': 'unable to verify user' })
+  }
 };
 
 exports.deletePost = async (req, res, next) => {

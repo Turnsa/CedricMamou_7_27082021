@@ -212,10 +212,10 @@ export default {
     },
     // modale change picture
     uploadImage (event) {
-            this.imageUrl = event.target.files[0]
+      this.imageUrl = event.target.files[0]
     },
     changePhoto() {``
-      let id = this.currentUser.userId;
+      const id = this.currentUser.userId;
       const fd = new FormData();
       fd.append('image', this.imageUrl, this.imageUrl.name);
       axios.put(`http://localhost:3000/api/user/upload/${id}`, fd, {
